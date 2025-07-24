@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pro Se Motion Generator for Virtual Appearance</title>
+    
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter for the UI -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- jsPDF and html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        /* Base styles and font settings */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Tailwind's gray-50 */
+        }
+
+        /* Styles for the generated document preview */
+        #motionDocument {
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            max-width: 8.5in;
+            margin: 2rem auto;
+            border: 1px solid #e5e7eb; /* gray-200 */
+        }
+
+        .document-page {
+            font-family: 'Georgia', serif;
+            font-size: 12pt;
+            width: 8.5in;
+            height: 11in;
+            padding: 1in;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+            page-break-after: always; /* Ensure each page prints separately */
+        }
+
+        .document-page:last-child {
+            page-break-after: avoid;
+        }
+
+        .document-page p {
+            margin: 0;
+            padding: 0;
+            line-height: 2; /* Double-spacing for main paragraphs */
+            text-indent: 0.5in; /* Indent first line of paragraphs */
+        }
+
+        .document-page .no-indent {
+            text-indent: 0;
+        }
+
+        .document-page .single-space {
+            line-height: 1.2;
+        }
+
+        .document-page .center-text {
+            text-align: center;
+        }
+        
+        .document-page .bold-text {
+            font-weight: bold;
+        }
+        
+        .document-page .page-number {
+            position: absolute;
+            bottom: 0.5in;
+            right: 1in;
+            font-size: 10pt;
+            line-height: 1;
+            font-family: 'Georgia', serif;
+        }
+
+        /* Print-specific styles */
+        @media print {
+            body {
+                background-color: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            #formContainer, #actionButtons, #header, #footer {
+                display: none !important;
+            }
+
+            #motionDocument {
+                box-shadow: none;
+                border: none;
+                margin: 0;
+                padding: 0;
+                max-width: 100%;
+            }
+
+            .document-page {
+                width: 100%;
+                height: 100%;
+                margin: 0;
+                padding: 0; /* Margins are handled by @page */
+                box-shadow: none;
+                border: none;
+            }
+            
+            @page {
+                size: letter;
+                margin: 1in;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <!-- Header -->
+    <header id="header" class="bg-white shadow-sm">
+        <div class="container mx-auto px-6 py-4">
+            <h1 class="text-2xl font-bold text-gray-900">Pro Se Motion Generator</h1>
+            <p class="text-gray-600 mt-1">For Virtual Appearance in Immigration Court</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-8">
+        <!-- Form Container -->
+        <div id="formContainer">
+            <div class="bg-white p-8 rounded-lg shadow-md">
+                <div class="mb-6 pb-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-800">Instructions</h2>
+                    <p class="mt-2 text-gray-600">
+                        This tool helps you create a legal document to ask the immigration judge to let you attend your hearing by video or phone. Please fill out all the fields below carefully. The information must be in English. When you are done, a professional document will be created for you to print and mail.
+                    </p>
+                </div>
+
+                <form id="motionForm" class="space-y-8">
+                    <!-- Section 1: Respondent Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">1. Your Information (Respondent)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="respondentName" class="block text-sm font-medium text-gray-700">Your Full Name (as on immigration documents)</label>
+                                <input type="text" id="respondentName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div>
+                                <label for="respondentANumber" class="block text-sm font-medium text-gray-700">Your A-Number (e.g., A123456789)</label>
+                                <input type="text" id="respondentANumber" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div>
+                                <label for="respondentStreet" class="block text-sm font-medium text-gray-700">Street Address</label>
+                                <input type="text" id="respondentStreet" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="respondentCity" class="block text-sm font-medium text-gray-700">City</label>
+                                    <input type="text" id="respondentCity" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="respondentState" class="block text-sm font-medium text-gray-700">State</label>
+                                    <input type="text" id="respondentState" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="respondentZip" class="block text-sm font-medium text-gray-700">Zip Code</label>
+                                    <input type="text" id="respondentZip" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label for="familyMembers" class="block text-sm font-medium text-gray-700">Family Members (if any have the same hearing)</label>
+                                <textarea id="familyMembers" rows="3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="One per line, e.g., 'Jane Doe, A987654321'. Leave blank if none."></textarea>
+                            </div>
+                             <div>
+                                <label for="phoneNumber" class="block text-sm font-medium text-gray-700">Your Phone Number (for phone hearing)</label>
+                                <input type="text" id="phoneNumber" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="(123) 456-7890">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 2: Hearing Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">2. Hearing Information</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="courtCity" class="block text-sm font-medium text-gray-700">Immigration Court City</label>
+                                    <input type="text" id="courtCity" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="courtState" class="block text-sm font-medium text-gray-700">Immigration Court State</label>
+                                    <input type="text" id="courtState" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="judgeName" class="block text-sm font-medium text-gray-700">Immigration Judge's Full Name</label>
+                                <input type="text" id="judgeName" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="hearingDate" class="block text-sm font-medium text-gray-700">Next Hearing Date</label>
+                                    <input type="date" id="hearingDate" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="hearingTime" class="block text-sm font-medium text-gray-700">Next Hearing Time</label>
+                                    <input type="time" id="hearingTime" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="hearingType" class="block text-sm font-medium text-gray-700">Type of Hearing</label>
+                                <select id="hearingType" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                    <option value="Master Calendar">Master Calendar</option>
+                                    <option value="Individual">Individual</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 3: Reasons for Virtual Appearance -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">3. Reasons for Virtual Appearance Request</h3>
+                        <div>
+                            <label for="reasonsForVirtual" class="block text-sm font-medium text-gray-700">Explain in detail why it is hard for you to go to court in person. Be specific.</label>
+                            <textarea id="reasonsForVirtual" rows="6" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Example reasons: I live in [Your Town/City], which is [X] hours away from the court. Travel is very expensive, and I have low income. I have a medical condition that makes travel hard. I am a single parent and have no one to help with my children. I am also afraid of being arrested by ICE at court, which would separate me from my family. I fear returning to [Country] because [briefly describe asylum claim facts]." required></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Section 4: Service Information -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-700 border-b pb-2 mb-4">4. Service Information (Mailing to Government Attorney)</h3>
+                        <p class="text-sm text-gray-500 mb-4">You must mail a copy of this motion to the government's lawyer (ICE/OPLA). Find their address online by searching for "EOIR Immigration Court" and your court's location.</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label for="oplaStreet" class="block text-sm font-medium text-gray-700">Office of Chief Counsel (OPLA) Street Address</label>
+                                <input type="text" id="oplaStreet" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label for="oplaCity" class="block text-sm font-medium text-gray-700">OPLA City</label>
+                                    <input type="text" id="oplaCity" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="oplaState" class="block text-sm font-medium text-gray-700">OPLA State</label>
+                                    <input type="text" id="oplaState" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                                <div>
+                                    <label for="oplaZip" class="block text-sm font-medium text-gray-700">OPLA Zip Code</label>
+                                    <input type="text" id="oplaZip" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="serviceDate" class="block text-sm font-medium text-gray-700">Date You Will Mail This Motion</label>
+                                <input type="date" id="serviceDate" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                            <div>
+                                <label for="serviceMethod" class="block text-sm font-medium text-gray-700">Method of Delivery</label>
+                                <input type="text" id="serviceMethod" placeholder="e.g., USPS Certified Mail, FedEx" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 5: Actions -->
+                    <div class="pt-6 border-t border-gray-200 flex justify-end">
+                        <button type="button" id="generateBtn" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Generate Motion Document
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Generated Document Display Area -->
+        <div id="motionDocument" class="hidden">
+            <!-- Content will be generated here by JavaScript -->
+        </div>
+
+        <!-- Action Buttons for Generated Document -->
+        <div id="actionButtons" class="hidden text-center mt-8 space-x-4">
+            <button type="button" id="printBtn" class="inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z" clip-rule="evenodd" /></svg>
+                Print Document
+            </button>
+            <button type="button" id="downloadPdfBtn" class="inline-flex items-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
+                Download as PDF
+            </button>
+        </div>
+    </main>
+    
+    <!-- Custom Modal for Validation -->
+    <div id="validationModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+      <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+          <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mt-2">Missing Information</h3>
+          <div class="mt-2 px-7 py-3">
+            <p class="text-sm text-gray-500">
+              Please fill in all required fields before generating the document.
+            </p>
+          </div>
+          <div class="items-center px-4 py-3">
+            <button id="closeModalBtn" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">
+              OK
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <script>
+        // Ensure jsPDF is loaded
+        const { jsPDF } = window.jspdf;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Event Listeners ---
+            document.getElementById('generateBtn').addEventListener('click', generateMotion);
+            document.getElementById('printBtn').addEventListener('click', () => window.print());
+            document.getElementById('downloadPdfBtn').addEventListener('click', downloadAsPdf);
+            document.getElementById('closeModalBtn').addEventListener('click', () => {
+                document.getElementById('validationModal').classList.add('hidden');
+            });
+
+            // --- Main Function to Generate Document ---
+            function generateMotion() {
+                // Collect form values
+                const data = {
+                    respondentName: document.getElementById('respondentName').value.trim(),
+                    respondentStreet: document.getElementById('respondentStreet').value.trim(),
+                    respondentCity: document.getElementById('respondentCity').value.trim(),
+                    respondentState: document.getElementById('respondentState').value.trim(),
+                    respondentZip: document.getElementById('respondentZip').value.trim(),
+                    respondentANumber: document.getElementById('respondentANumber').value.trim(),
+                    familyMembersInput: document.getElementById('familyMembers').value.trim(),
+                    phoneNumber: document.getElementById('phoneNumber').value.trim() || '[Not Provided]',
+                    courtCity: document.getElementById('courtCity').value.trim(),
+                    courtState: document.getElementById('courtState').value.trim(),
+                    judgeName: document.getElementById('judgeName').value.trim(),
+                    hearingDate: document.getElementById('hearingDate').value,
+                    hearingTime: document.getElementById('hearingTime').value,
+                    hearingType: document.getElementById('hearingType').value,
+                    reasonsForVirtual: document.getElementById('reasonsForVirtual').value.trim(),
+                    oplaStreet: document.getElementById('oplaStreet').value.trim(),
+                    oplaCity: document.getElementById('oplaCity').value.trim(),
+                    oplaState: document.getElementById('oplaState').value.trim(),
+                    oplaZip: document.getElementById('oplaZip').value.trim(),
+                    serviceDate: document.getElementById('serviceDate').value,
+                    serviceMethod: document.getElementById('serviceMethod').value.trim()
+                };
+
+                // Basic validation
+                const requiredFields = [
+                    data.respondentName, data.respondentStreet, data.respondentCity, data.respondentState, data.respondentZip, data.respondentANumber,
+                    data.courtCity, data.courtState, data.judgeName, data.hearingDate, data.hearingTime, data.hearingType, data.reasonsForVirtual,
+                    data.oplaStreet, data.oplaCity, data.oplaState, data.oplaZip, data.serviceDate, data.serviceMethod
+                ];
+
+                if (requiredFields.some(field => field === '')) {
+                    document.getElementById('validationModal').classList.remove('hidden');
+                    return;
+                }
+
+                // Format dates and times for display
+                const formattedHearingDate = formatDate(data.hearingDate);
+                const formattedServiceDate = formatDate(data.serviceDate);
+                const formattedHearingTime = formatTime(data.hearingTime);
+
+                // Format family members if provided
+                let familyMembersHtml = '';
+                if (data.familyMembersInput) {
+                    familyMembersHtml = data.familyMembersInput.split('\n')
+                        .filter(line => line.trim() !== '')
+                        .map(line => `<p class="no-indent single-space">) ${escapeHtml(line.trim())} )</p>`)
+                        .join('');
+                }
+
+                // Construct the document HTML using the template
+                const documentHtml = getDocumentTemplate(data, formattedHearingDate, formattedHearingTime, formattedServiceDate, familyMembersHtml);
+
+                // Display the generated document
+                document.getElementById('motionDocument').innerHTML = documentHtml;
+                document.getElementById('formContainer').classList.add('hidden');
+                document.getElementById('header').classList.add('hidden');
+                document.getElementById('motionDocument').classList.remove('hidden');
+                document.getElementById('actionButtons').classList.remove('hidden');
+                window.scrollTo(0, 0);
+            }
+
+            // --- PDF Download Function ---
+            function downloadAsPdf() {
+                const motionDocument = document.getElementById('motionDocument');
+                const downloadButton = document.getElementById('downloadPdfBtn');
+                
+                // Temporarily change button text to show progress
+                const originalButtonText = downloadButton.innerHTML;
+                downloadButton.innerHTML = 'Generating PDF...';
+                downloadButton.disabled = true;
+
+                html2canvas(motionDocument, {
+                    scale: 2, // Increase resolution for better quality
+                    useCORS: true,
+                    logging: false
+                }).then(canvas => {
+                    const imgData = canvas.toDataURL('image/png');
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'in',
+                        format: 'letter'
+                    });
+
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const canvasWidth = canvas.width;
+                    const canvasHeight = canvas.height;
+                    const ratio = canvasHeight / canvasWidth;
+                    const imgHeight = pdfWidth * ratio;
+                    let heightLeft = imgHeight;
+                    let position = 0;
+
+                    // Add the first page
+                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+                    heightLeft -= pdfHeight;
+
+                    // Add subsequent pages if content overflows
+                    while (heightLeft > 0) {
+                        position = heightLeft - imgHeight;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+                        heightLeft -= pdfHeight;
+                    }
+                    
+                    pdf.save('Motion_for_Virtual_Appearance.pdf');
+                    
+                    // Restore button state
+                    downloadButton.innerHTML = originalButtonText;
+                    downloadButton.disabled = false;
+                }).catch(error => {
+                    console.error("Error generating PDF:", error);
+                    alert("Sorry, there was an error creating the PDF. Please try again.");
+                    // Restore button state on error
+                    downloadButton.innerHTML = originalButtonText;
+                    downloadButton.disabled = false;
+                });
+            }
+
+            // --- Helper Functions ---
+            function formatDate(dateString) {
+                if (!dateString) return '';
+                const date = new Date(dateString + 'T00:00:00-05:00'); // Assume Central Time to avoid timezone issues
+                return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            }
+
+            function formatTime(timeString) {
+                if (!timeString) return '';
+                const [hours, minutes] = timeString.split(':');
+                const h = parseInt(hours, 10);
+                const ampm = h >= 12 ? 'p.m.' : 'a.m.';
+                const formattedHour = h % 12 === 0 ? 12 : h % 12;
+                return `${formattedHour}:${minutes} ${ampm}`;
+            }
+            
+            function escapeHtml(unsafe) {
+                return unsafe
+                     .replace(/&/g, "&amp;")
+                     .replace(/</g, "&lt;")
+                     .replace(/>/g, "&gt;")
+                     .replace(/"/g, "&quot;")
+                     .replace(/'/g, "&#039;");
+            }
+
+            // --- HTML Template Function ---
+            function getDocumentTemplate(data, fDate, fTime, fServiceDate, fFamily) {
+                return `
+                <!-- PAGE 1: MOTION -->
+                <div class="document-page">
+                    <p class="no-indent single-space bold-text">${escapeHtml(data.respondentName)}, pro se</p>
+                    <p class="no-indent single-space">${escapeHtml(data.respondentStreet)}<br>${escapeHtml(data.respondentCity)}, ${escapeHtml(data.respondentState)} ${escapeHtml(data.respondentZip)}</p>
+                    <br><br>
+                    <p class="no-indent center-text single-space bold-text">UNITED STATES DEPARTMENT OF JUSTICE</p>
+                    <p class="no-indent center-text single-space bold-text">EXECUTIVE OFFICE FOR IMMIGRATION REVIEW</p>
+                    <p class="no-indent center-text single-space bold-text">IMMIGRATION COURT</p>
+                    <p class="no-indent center-text single-space bold-text">${escapeHtml(data.courtCity)}, ${escapeHtml(data.courtState)}</p>
+                    <br>
+                    <p class="no-indent center-text single-space">__________________________________________</p>
+                    <p class="no-indent single-space">) In the Matter of: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+                    <p class="no-indent single-space">) </p>
+                    <p class="no-indent single-space">) ${escapeHtml(data.respondentName)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A number ${escapeHtml(data.respondentANumber)}</p>
+                    ${fFamily}
+                    <p class="no-indent single-space">) Respondent &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) </p>
+                    <p class="no-indent single-space">) </p>
+                    <p class="no-indent single-space">) In Removal Proceedings &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) </p>
+                    <p class="no-indent center-text single-space">__________________________________________</p>
+                    <p class="no-indent single-space">Immigration Judge: ${escapeHtml(data.judgeName)}</p>
+                    <p class="no-indent single-space">Next Hearing Date: ${fDate}</p>
+                    <br>
+                    <p class="no-indent center-text bold-text">PRO SE MOTION TO ALLOW VIRTUAL APPEARANCE</p>
+                    <br>
+                    <p>My name is ${escapeHtml(data.respondentName)}. My next hearing is on ${fDate} at ${fTime}.</p>
+                    <p>I respectfully request the Court to allow me to appear by Webex or by phone for my upcoming ${escapeHtml(data.hearingType)} hearing as permitted under INA § 240(b)(2) and 8 C.F.R. § 1003.25(c). The Immigration Court Practice Manual at Chapter 4.6 and 4.7 also allows for hearings to be conducted by video or telephone conference. Pursuant to EOIR Director’s Policy Memorandum 21-03, video teleconferencing “may be used for any immigration court hearing, particularly when operational need calls for its usage” including where necessary “to increase convenience and accessibility for respondents; to reduce travel costs; . . . [and] to ensure timely adjudication of cases.” Memorandum from James R. McHenry III, EOIR Dir., PM 21-03, Immigration Court Hearings Conducted by Telephone and Video Conferencing, at 4 (Nov. 6, 2020). Moreover, video teleconferencing “increasing flexibility, allows the adjudication of cases from multiple settings without being tethered to a particular courtroom, and does not compromise the fairness of the hearing.” Memorandum from Sirce E. Owen, EOIR Acting Dir., PM 25-25, Rescind and Cancel Director’s Memorandum 22-07, at 1 (Mar. 14, 2025).</p>
+                    <p>Therefore, I ask to be allowed to attend the hearing virtually because: ${escapeHtml(data.reasonsForVirtual)}</p>
+                    <p>If the hearing is by phone, I can be reached at ${escapeHtml(data.phoneNumber)}.</p>
+                    <p>If the hearing is internet-based (Webex), I have access to internet, video capabilities, and a private place to attend the hearing.</p>
+                    <p>Considering these circumstances, I ask that the Court allow me to appear via WebEx for my upcoming hearing.</p>
+                    <br>
+                    <p class="no-indent single-space">Respectfully submitted,</p>
+                    <br><br>
+                    <p class="no-indent single-space">_______________________________</p>
+                    <p class="no-indent single-space">${escapeHtml(data.respondentName)}</p>
+                    <br>
+                    <p class="no-indent single-space">_______________________________</p>
+                    <p class="no-indent single-space">Date</p>
+                    <div class="page-number">Page 1 of 3</div>
+                </div>
+
+                <!-- PAGE 2: ORDER -->
+                <div class="document-page">
+                    <p class="no-indent center-text single-space bold-text">UNITED STATES DEPARTMENT OF JUSTICE</p>
+                    <p class="no-indent center-text single-space bold-text">EXECUTIVE OFFICE FOR IMMIGRATION REVIEW</p>
+                    <p class="no-indent center-text single-space bold-text">IMMIGRATION COURT</p>
+                    <p class="no-indent center-text single-space bold-text">${escapeHtml(data.courtCity)}, ${escapeHtml(data.courtState)}</p>
+                    <br>
+                    <p class="no-indent center-text single-space">__________________________________________</p>
+                    <p class="no-indent single-space">) In the Matter of: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</p>
+                    <p class="no-indent single-space">) </p>
+                    <p class="no-indent single-space">) ${escapeHtml(data.respondentName)}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A number ${escapeHtml(data.respondentANumber)}</p>
+                    <p class="no-indent single-space">) Respondent &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) </p>
+                    <p class="no-indent single-space">) </p>
+                    <p class="no-indent single-space">) In Removal Proceedings &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;) </p>
+                    <p class="no-indent center-text single-space">__________________________________________</p>
+                    <br>
+                    <p class="no-indent center-text bold-text">ORDER OF THE IMMIGRATION JUDGE</p>
+                    <br>
+                    <p>Upon consideration of the Respondent’s Pro Se Motion to Change Hearing Format, it is HEREBY ORDERED that the motion be:</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ GRANTED &nbsp;&nbsp;&nbsp;&nbsp;☐ DENIED because:</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ DHS does not oppose the motion.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ The respondent does not oppose the motion.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ A response to the motion has not been filed with the court.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ Good cause has been established for the motion.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ The court agrees with the reasons stated in the opposition to the motion.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ The motion is untimely per _______________________________________.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ Other: _______________________________________.</p>
+                    <br>
+                    <p>Deadlines:</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ The application(s) for relief must be filed by _________________________.</p>
+                    <p class="no-indent single-space" style="text-indent: 1in;">☐ The respondent must comply with DHS biometrics instructions by _____________________.</p>
+                    <br><br><br><br>
+                    <p class="no-indent single-space">_________________________ &nbsp;&nbsp;&nbsp;&nbsp;_________________________________</p>
+                    <p class="no-indent single-space">Date &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Immigration Judge</p>
+                    <div class="page-number">Page 2 of 3</div>
+                </div>
+
+                <!-- PAGE 3: PROOF OF SERVICE -->
+                <div class="document-page">
+                    <p class="no-indent center-text single-space bold-text">PROOF OF SERVICE</p>
+                    <br><br>
+                    <p>On ${fServiceDate}, I, ${escapeHtml(data.respondentName)}, served a copy of this: RESPONDENT’S PRO SE MOTION TO CHANGE HEARING FORMAT and any attached pages to the Office of Chief Counsel, Department of Homeland Security at the following address:</p>
+                    <br>
+                    <p class="no-indent single-space" style="text-indent: 0.5in;">${escapeHtml(data.oplaStreet)}<br>
+                    <span style="display: inline-block; text-indent: 0.5in;">${escapeHtml(data.oplaCity)}, ${escapeHtml(data.oplaState)} ${escapeHtml(data.oplaZip)}</span></p>
+                    <br>
+                    <p>By: ${escapeHtml(data.serviceMethod)}</p>
+                    <br><br><br>
+                    <p class="no-indent single-space">_______________________________</p>
+                    <p class="no-indent single-space">Signature of individual who mailed the motion</p>
+                    <br>
+                    <p class="no-indent single-space">____________________</p>
+                    <p class="no-indent single-space">Date</p>
+                    <div class="page-number">Page 3 of 3</div>
+                </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
